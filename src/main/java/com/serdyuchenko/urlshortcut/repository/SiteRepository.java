@@ -18,6 +18,23 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
     Optional<Site> findBySite(String site);
 
     /**
+     * Ищет сайт по логину API-клиента.
+     *
+     * @param login логин сайта
+     * @return найденный сайт или пустой результат
+     */
+    Optional<Site> findByLogin(String login);
+
+    /**
+     * Ищет сайт по паре логин/пароль.
+     *
+     * @param login логин сайта
+     * @param password пароль сайта
+     * @return найденный сайт или пустой результат
+     */
+    Optional<Site> findByLoginAndPassword(String login, String password);
+
+    /**
      * Проверяет, занят ли логин другим сайтом.
      *
      * @param login логин для проверки

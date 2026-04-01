@@ -13,6 +13,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import com.serdyuchenko.urlshortcut.repository.ShortcutRepository;
 import com.serdyuchenko.urlshortcut.repository.SiteRepository;
 
 @SpringBootTest
@@ -26,8 +27,12 @@ class SiteRegistrationControllerTest {
     @Autowired
     private SiteRepository siteRepository;
 
+    @Autowired
+    private ShortcutRepository shortcutRepository;
+
     @BeforeEach
     void setUp() {
+        shortcutRepository.deleteAll();
         siteRepository.deleteAll();
     }
 

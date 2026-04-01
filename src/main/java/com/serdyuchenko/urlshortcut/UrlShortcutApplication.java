@@ -2,11 +2,12 @@ package com.serdyuchenko.urlshortcut;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 
 /**
  * Точка входа в приложение сервиса сокращения ссылок.
  */
-@SpringBootApplication
+@SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
 public class UrlShortcutApplication {
 
     /**
