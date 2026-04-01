@@ -168,3 +168,80 @@ Expected result:
 2. Затем добавить JWT и защитить `convert`/`statistic`.
 3. После этого сделать redirect с атомарным обновлением `total`.
 4. В конце собрать статистику, smoke-тесты и описание API.
+
+## Запуск
+
+Проверка тестами:
+
+```bash
+./mvnw test
+```
+
+Локальный запуск приложения:
+
+```bash
+./mvnw spring-boot:run
+```
+
+Приложение стартует на `http://localhost:8080` и использует in-memory H2.
+
+## Smoke-check через curl
+
+1. Зарегистрировать сайт:
+
+```bash
+curl -i -X POST http://localhost:8080/registration \
+  -H 'Content-Type: application/json' \
+  -d '{"site":"https://job4j.ru"}'
+```
+
+Ожидаемый результат: `200 OK`, в теле `registration=true`, а также выданные `login` и `password`.
+
+2. Получить JWT:
+
+```bash
+curl -s -X POST http://localhost:8080/login \
+  -H 'Content-Type: application/json' \
+  -d '{"login":"<login>","password":"<password>"}'
+```
+
+Ожидаемый результат: JSON c полем `token`.
+
+3. Сократить ссылку:
+
+```bash
+curl -s -X POST http://localhost:8080/convert \
+  -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <token>' \
+  -d '{"url":"https://job4j.ru/resources/123"}'
+```
+
+Ожидаемый результат: JSON вида `{"code":"abc123"}`.
+
+4. Проверить публичный redirect:
+
+```bash
+curl -i http://localhost:8080/redirect/<code>
+```
+
+Ожидаемый результат: `302 Found` и заголовок `Location: https://job4j.ru/resources/123`.
+
+5. Проверить статистику текущего сайта:
+
+```bash
+curl -s http://localhost:8080/statistic \
+  -H 'Authorization: Bearer <token>'
+```
+
+Ожидаемый результат: массив объектов вида:
+
+```json
+[
+  {
+    "url": "https://job4j.ru/resources/123",
+    "total": 1
+  }
+]
+```
+
+Статистика отсортирована по `total desc`, затем по `url asc`, и содержит только ссылки текущего авторизованного сайта.
