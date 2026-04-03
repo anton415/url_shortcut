@@ -2,10 +2,12 @@ package com.serdyuchenko.urlshortcut.repository;
 
 import java.util.List;
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
 import com.serdyuchenko.urlshortcut.dto.StatisticResponse;
 import com.serdyuchenko.urlshortcut.model.Shortcut;
 
@@ -37,7 +39,7 @@ public interface ShortcutRepository extends JpaRepository<Shortcut, Long> {
      * @return количество обновленных строк
      */
     @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("update Shortcut shortcut set shortcut.total = shortcut.total + 1 where shortcut.id = :shortcutId")
+    @Query("UPDATE Shortcut shortcut SET shortcut.total = shortcut.total + 1 WHERE shortcut.id = :shortcutId")
     int incrementTotalById(@Param("shortcutId") Long shortcutId);
 
     /**
@@ -47,10 +49,10 @@ public interface ShortcutRepository extends JpaRepository<Shortcut, Long> {
      * @return список ссылок и общего числа переходов
      */
     @Query("""
-            select new com.serdyuchenko.urlshortcut.dto.StatisticResponse(shortcut.url, shortcut.total)
-            from Shortcut shortcut
-            where shortcut.site.id = :siteId
-            order by shortcut.total desc, shortcut.url asc
+            SELECT NEW com.serdyuchenko.urlshortcut.dto.StatisticResponse(shortcut.url, shortcut.total)
+            FROM Shortcut shortcut
+            WHERE shortcut.site.id = :siteId
+            ORDER BY shortcut.total DESC, shortcut.url ASC
             """)
     List<StatisticResponse> findStatisticsBySiteId(@Param("siteId") Long siteId);
 }
