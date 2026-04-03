@@ -24,7 +24,7 @@ public class Site {
     @Column(nullable = false, unique = true)
     private String login;
 
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)
     private String password;
 
     public Long getId() {

@@ -1,6 +1,7 @@
 package com.serdyuchenko.urlshortcut.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -11,10 +12,12 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import com.serdyuchenko.urlshortcut.repository.ShortcutRepository;
 import com.serdyuchenko.urlshortcut.repository.SiteRepository;
+import com.serdyuchenko.urlshortcut.service.CredentialGenerator;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -30,6 +33,9 @@ class SiteRegistrationControllerTest {
     @Autowired
     private ShortcutRepository shortcutRepository;
 
+    @MockBean
+    private CredentialGenerator credentialGenerator;
+
     @BeforeEach
     void setUp() {
         shortcutRepository.deleteAll();
@@ -39,6 +45,9 @@ class SiteRegistrationControllerTest {
     @Test
     @DisplayName("Новый сайт регистрируется и сохраняется в базе данных")
     void whenRegisterNewSiteThenCredentialsAreReturnedAndSiteIsStored() throws Exception {
+        given(credentialGenerator.newLogin()).willReturn("job4j-login");
+        given(credentialGenerator.newPassword()).willReturn("job4j-password");
+
         mockMvc.perform(post("/registration")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"site\":\"https://job4j.ru/\"}"))
@@ -57,6 +66,9 @@ class SiteRegistrationControllerTest {
     @Test
     @DisplayName("Повторная регистрация того же сайта отклоняется без создания дубликата")
     void whenRegisterExistingSiteThenRegistrationIsRejectedWithoutDuplicate() throws Exception {
+        given(credentialGenerator.newLogin()).willReturn("job4j-login");
+        given(credentialGenerator.newPassword()).willReturn("job4j-password");
+
         mockMvc.perform(post("/registration")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"site\":\"https://job4j.ru\"}"))
@@ -72,5 +84,33 @@ class SiteRegistrationControllerTest {
                 .andExpect(jsonPath("$.password").doesNotExist());
 
         assertThat(siteRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Разные сайты могут быть зарегистрированы с одинаковым паролем")
+    void whenRegisterDifferentSitesThenDuplicatePasswordsAreAllowed() throws Exception {
+        given(credentialGenerator.newLogin()).willReturn("job4j-login", "example-login");
+        given(credentialGenerator.newPassword()).willReturn("shared-password", "shared-password");
+
+        mockMvc.perform(post("/registration")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"site\":\"https://job4j.ru\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.registration").value(true))
+                .andExpect(jsonPath("$.login").value("job4j-login"))
+                .andExpect(jsonPath("$.password").value("shared-password"));
+
+        mockMvc.perform(post("/registration")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"site\":\"https://example.com\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.registration").value(true))
+                .andExpect(jsonPath("$.login").value("example-login"))
+                .andExpect(jsonPath("$.password").value("shared-password"));
+
+        assertThat(siteRepository.findAll())
+                .hasSize(2)
+                .extracting("password")
+                .containsOnly("shared-password");
     }
 }

@@ -1,7 +1,9 @@
 package com.serdyuchenko.urlshortcut.repository;
 
 import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+
 import com.serdyuchenko.urlshortcut.model.Site;
 
 /**
@@ -41,12 +43,4 @@ public interface SiteRepository extends JpaRepository<Site, Long> {
      * @return {@code true}, если логин уже существует
      */
     boolean existsByLogin(String login);
-
-    /**
-     * Проверяет, занят ли пароль другим сайтом.
-     *
-     * @param password пароль для проверки
-     * @return {@code true}, если пароль уже существует
-     */
-    boolean existsByPassword(String password);
 }
