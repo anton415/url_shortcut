@@ -3,6 +3,7 @@ package com.serdyuchenko.urlshortcut.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import javax.persistence.EntityManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,16 +22,19 @@ class ShortcutStatisticRepositoryTest {
     @Autowired
     private SiteRepository siteRepository;
 
+    @Autowired
+    private EntityManager entityManager;
+
     @Test
-    @DisplayName("SQL update увеличивает total без read-modify-write в Java")
-    void whenIncrementTotalByIdThenCounterIsIncreasedInDatabase() {
+    @DisplayName("Сущность по id возвращается для обновления и изменение total сохраняется")
+    void whenFindEditableByIdThenCounterIsIncreasedInDatabase() {
         Shortcut shortcut = shortcutRepository.save(shortcut("job4j", "https://job4j.ru/resources/123", savedSite()));
 
-        int firstUpdate = shortcutRepository.incrementTotalById(shortcut.getId());
-        int secondUpdate = shortcutRepository.incrementTotalById(shortcut.getId());
+        Shortcut editableShortcut = shortcutRepository.findEditableById(shortcut.getId()).orElseThrow();
+        editableShortcut.setTotal(editableShortcut.getTotal() + 2);
+        entityManager.flush();
+        entityManager.clear();
 
-        assertThat(firstUpdate).isEqualTo(1);
-        assertThat(secondUpdate).isEqualTo(1);
         assertThat(shortcutRepository.findById(shortcut.getId()))
                 .get()
                 .extracting(Shortcut::getTotal)

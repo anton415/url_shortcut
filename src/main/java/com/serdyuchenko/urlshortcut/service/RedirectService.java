@@ -29,10 +29,9 @@ public class RedirectService {
         Shortcut shortcut = shortcutRepository.findByCode(code)
                 .orElseThrow(ShortcutNotFoundException::new);
         String url = shortcut.getUrl();
-        int updatedRows = shortcutRepository.incrementTotalById(shortcut.getId());
-        if (updatedRows != 1) {
-            throw new IllegalStateException("Shortcut total was not updated");
-        }
+        Shortcut editableShortcut = shortcutRepository.findEditableById(shortcut.getId())
+                .orElseThrow(() -> new IllegalStateException("Shortcut was not found for update"));
+        editableShortcut.setTotal(editableShortcut.getTotal() + 1);
         return url;
     }
 }

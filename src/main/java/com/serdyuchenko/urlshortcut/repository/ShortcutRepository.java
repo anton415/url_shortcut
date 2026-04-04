@@ -3,8 +3,10 @@ package com.serdyuchenko.urlshortcut.repository;
 import java.util.List;
 import java.util.Optional;
 
+import javax.persistence.LockModeType;
+
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -33,14 +35,14 @@ public interface ShortcutRepository extends JpaRepository<Shortcut, Long> {
     boolean existsByCode(String code);
 
     /**
-     * Атомарно увеличивает счетчик переходов по ссылке.
+     * Возвращает ссылку по идентификатору с блокировкой для безопасного обновления.
      *
      * @param shortcutId идентификатор сокращенной ссылки
-     * @return количество обновленных строк
+     * @return найденная ссылка, если идентификатор существует
      */
-    @Modifying(flushAutomatically = true, clearAutomatically = true)
-    @Query("UPDATE Shortcut shortcut SET shortcut.total = shortcut.total + 1 WHERE shortcut.id = :shortcutId")
-    int incrementTotalById(@Param("shortcutId") Long shortcutId);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT shortcut FROM Shortcut shortcut WHERE shortcut.id = :shortcutId")
+    Optional<Shortcut> findEditableById(@Param("shortcutId") Long shortcutId);
 
     /**
      * Возвращает статистику ссылок конкретного сайта.
