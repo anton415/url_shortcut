@@ -2,8 +2,8 @@ package com.serdyuchenko.urlshortcut.service;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import com.serdyuchenko.urlshortcut.model.Shortcut;
 import com.serdyuchenko.urlshortcut.model.Site;
 import com.serdyuchenko.urlshortcut.repository.ShortcutRepository;
@@ -38,23 +38,20 @@ public class ShortcutService {
      * @param rawUrl исходный URL
      * @return сохраненная сокращенная ссылка
      */
-    @Transactional
     public Shortcut createShortcut(Long siteId, String rawUrl) {
         Site site = siteRepository.findById(siteId)
                 .orElseThrow(() -> new IllegalArgumentException("Site does not exist"));
-        Shortcut shortcut = new Shortcut();
-        shortcut.setSite(site);
-        shortcut.setUrl(validateUrl(rawUrl));
-        shortcut.setCode(generateUniqueCode());
-        shortcut.setTotal(0L);
-        return shortcutRepository.save(shortcut);
-    }
-
-    private String generateUniqueCode() {
+        String validatedUrl = validateUrl(rawUrl);
         for (int attempt = 0; attempt < MAX_GENERATION_ATTEMPTS; attempt++) {
-            String code = shortcutCodeGenerator.newCode();
-            if (!shortcutRepository.existsByCode(code)) {
-                return code;
+            Shortcut shortcut = new Shortcut();
+            shortcut.setSite(site);
+            shortcut.setUrl(validatedUrl);
+            shortcut.setCode(shortcutCodeGenerator.newCode());
+            shortcut.setTotal(0L);
+            try {
+                return shortcutRepository.saveAndFlush(shortcut);
+            } catch (DataIntegrityViolationException exception) {
+                // Код уже занят, пробуем сгенерировать следующий.
             }
         }
         throw new IllegalStateException("Unable to generate unique shortcut code");
