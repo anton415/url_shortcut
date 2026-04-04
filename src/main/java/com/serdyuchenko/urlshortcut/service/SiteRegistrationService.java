@@ -2,7 +2,6 @@ package com.serdyuchenko.urlshortcut.service;
 
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import com.serdyuchenko.urlshortcut.dto.RegistrationResponse;
 import com.serdyuchenko.urlshortcut.model.Site;
@@ -13,8 +12,6 @@ import com.serdyuchenko.urlshortcut.repository.SiteRepository;
  */
 @Service
 public class SiteRegistrationService {
-
-    private static final int MAX_LOGIN_GENERATION_ATTEMPTS = 20;
 
     private final SiteRepository siteRepository;
 
@@ -36,15 +33,11 @@ public class SiteRegistrationService {
      * @param rawSite адрес сайта в исходном виде
      * @return ответ с признаком регистрации и credentials при успехе
      */
-    @Transactional
     public RegistrationResponse register(String rawSite) {
         String normalizedSite = siteNormalizer.normalize(rawSite);
-        if (siteRepository.findBySite(normalizedSite).isPresent()) {
-            return RegistrationResponse.alreadyRegistered();
-        }
         Site site = new Site();
         site.setSite(normalizedSite);
-        site.setLogin(generateUniqueLogin());
+        site.setLogin(credentialGenerator.newLogin());
         site.setPassword(generatePassword());
         try {
             Site savedSite = siteRepository.saveAndFlush(site);
@@ -55,16 +48,6 @@ public class SiteRegistrationService {
             }
             throw exception;
         }
-    }
-
-    private String generateUniqueLogin() {
-        for (int attempt = 0; attempt < MAX_LOGIN_GENERATION_ATTEMPTS; attempt++) {
-            String login = credentialGenerator.newLogin();
-            if (!siteRepository.existsByLogin(login)) {
-                return login;
-            }
-        }
-        throw new IllegalStateException("Unable to generate unique login");
     }
 
     private String generatePassword() {
