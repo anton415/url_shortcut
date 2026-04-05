@@ -26,12 +26,8 @@ public class RedirectService {
      */
     @Transactional
     public String resolveUrl(String code) {
-        Shortcut shortcut = shortcutRepository.findByCode(code)
+        Shortcut shortcut = shortcutRepository.incrementTotalAndGetByCode(code)
                 .orElseThrow(ShortcutNotFoundException::new);
-        String url = shortcut.getUrl();
-        Shortcut editableShortcut = shortcutRepository.findEditableById(shortcut.getId())
-                .orElseThrow(() -> new IllegalStateException("Shortcut was not found for update"));
-        editableShortcut.setTotal(editableShortcut.getTotal() + 1);
-        return url;
+        return shortcut.getUrl();
     }
 }
