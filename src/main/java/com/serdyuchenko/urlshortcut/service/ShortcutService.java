@@ -52,6 +52,7 @@ public class ShortcutService {
                 return shortcutRepository.saveAndFlush(shortcut);
             } catch (DataIntegrityViolationException exception) {
                 // Код уже занят, пробуем сгенерировать следующий.
+                continue;
             }
         }
         throw new IllegalStateException("Unable to generate unique shortcut code");
