@@ -27,18 +27,14 @@ public interface ShortcutRepository extends JpaRepository<Shortcut, Long> {
     Optional<Shortcut> findByCode(String code);
 
     /**
-     * Атомарно увеличивает счетчик переходов и возвращает обновленную ссылку.
+     * Возвращает ссылку по короткому коду с блокировкой для безопасного обновления.
      *
      * @param code короткий код
-     * @return обновленная ссылка, если код существует
+     * @return найденная ссылка, если код существует
      */
-    @Query(value = """
-            UPDATE shortcut
-            SET total = total + 1
-            WHERE code = :code
-            RETURNING id, code, url, total, site_id
-            """, nativeQuery = true)
-    Optional<Shortcut> incrementTotalAndGetByCode(@Param("code") String code);
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT shortcut FROM Shortcut shortcut WHERE shortcut.code = :code")
+    Optional<Shortcut> findEditableByCode(@Param("code") String code);
 
     /**
      * Проверяет занятость короткого кода.

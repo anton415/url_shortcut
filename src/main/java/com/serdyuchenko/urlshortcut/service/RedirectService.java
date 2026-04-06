@@ -26,8 +26,9 @@ public class RedirectService {
      */
     @Transactional
     public String resolveUrl(String code) {
-        Shortcut shortcut = shortcutRepository.incrementTotalAndGetByCode(code)
+        Shortcut shortcut = shortcutRepository.findEditableByCode(code)
                 .orElseThrow(ShortcutNotFoundException::new);
+        shortcut.setTotal(shortcut.getTotal() + 1);
         return shortcut.getUrl();
     }
 }
