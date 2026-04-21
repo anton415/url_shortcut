@@ -245,3 +245,98 @@ curl -s http://localhost:8080/statistic \
 ```
 
 Статистика отсортирована по `total desc`, затем по `url asc`, и содержит только ссылки текущего авторизованного сайта.
+
+## Запуск в Kubernetes
+
+### Предварительные требования
+- Установленный `kubectl`
+- Работающий Kubernetes кластер (например, minikube или Docker Desktop)
+
+### Шаги запуска
+
+1. **Применить конфигурацию PostgreSQL (секрет и ConfigMap)**:
+
+```bash
+kubectl apply -f postgresdb-secret.yml
+kubectl apply -f postgresdb-configmap.yml
+```
+
+2. **Применить развертывание PostgreSQL (deployment и service)**:
+
+```bash
+kubectl apply -f postgresdb-deployment.yml
+```
+
+3. **Дождаться запуска PostgreSQL** (проверить статус):
+
+```bash
+kubectl get pods
+```
+
+PostgreSQL должен быть в статусе `Running` перед запуском Spring Boot приложения.
+
+4. **Применить развертывание Spring Boot приложения**:
+
+```bash
+kubectl apply -f spring-deployment.yml
+```
+
+5. **Проверить статус подов**:
+
+```bash
+kubectl get pods
+```
+
+Оба пода должны быть в статусе `Running` и `READY` 1/1.
+
+### Проверка логов
+
+Для просмотра логов Spring Boot приложения:
+
+```bash
+kubectl logs -l app=spring-boot --tail=100
+```
+
+Для просмотра логов PostgreSQL:
+
+```bash
+kubectl logs -l app=postgresdb --tail=100
+```
+
+### Доступ к приложению
+
+1. **Локально (port-forward)**:
+
+```bash
+kubectl port-forward svc/spring-boot-service 8080:8080
+```
+
+Приложение будет доступно на `http://localhost:8080`.
+
+2. **Проверить доступность**:
+
+```bash
+curl -i http://localhost:8080/health
+```
+
+### Очистка ресурсов
+
+Для удаления всех развернутых ресурсов:
+
+```bash
+kubectl delete deployment spring-boot
+kubectl delete deployment postgresdb-deployment
+kubectl delete service spring-boot-service
+kubectl delete service postgresdb-service
+kubectl delete configmap postgresdb-configmap
+kubectl delete secret postgresdb-secret
+```
+
+Или удалить все сразу:
+
+```bash
+kubectl delete -f postgresdb-secret.yml
+kubectl delete -f postgresdb-configmap.yml
+kubectl delete -f postgresdb-deployment.yml
+kubectl delete -f spring-deployment.yml
+```
